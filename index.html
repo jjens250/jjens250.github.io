@@ -6,18 +6,9 @@
     body { font-family: Arial; padding: 20px; }
     table { border-collapse: collapse; margin-bottom: 30px; }
     td, th { border: 1px solid #333; padding: 8px 12px; }
-    input { width: 120px; font-size: 18px; }
   </style>
 </head>
 <body>
-
-<h2>Noah's Letters (A–G):</h2>
-<input id="noahInput" maxlength="5" placeholder="ABCDE">
-
-<h2>Delilah's Letters (A–G):</h2>
-<input id="delilahInput" maxlength="5" placeholder="ABCDE">
-
-<br><br>
 
 <h2>Noah's Days</h2>
 <table id="noahTable"></table>
@@ -26,9 +17,14 @@
 <table id="delilahTable"></table>
 
 <script>
-// -----------------------------
-// Dictionaries
-// -----------------------------
+// --------------------------------------------------
+// 1. HARD-CODED WEEKLY LETTERS (edit this each week)
+// --------------------------------------------------
+const weeklyLetters = "CDEFA";   // <--- CHANGE THIS ONLY
+
+// --------------------------------------------------
+// 2. Dictionaries
+// --------------------------------------------------
 const noahDict = {
   A: "Library",
   B: "Gym",
@@ -42,16 +38,16 @@ const noahDict = {
 const delilahDict = {
   A: "Library",
   B: "Gym",
-  C: "Stem",
-  D: "Music",
+  C: "Music",
+  D: "Library",
   E: "Gym",
   F: "Stem",
   G: "Off"
 };
 
-// -----------------------------
-// Days of the Week + Dates
-// -----------------------------
+// --------------------------------------------------
+// 3. Days + Dates
+// --------------------------------------------------
 const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
 function getWeekDates() {
@@ -65,51 +61,34 @@ function getWeekDates() {
   });
 }
 
-// -----------------------------
-// Build Table
-// -----------------------------
-function buildTable(childDict, letters, tableId) {
+// --------------------------------------------------
+// 4. Build Table
+// --------------------------------------------------
+function buildTable(dict, letters, tableId) {
   const table = document.getElementById(tableId);
-  table.innerHTML = "";
-
   const weekDates = getWeekDates();
 
-  // Header row
-  let header = "<tr>";
+  let html = "<tr>";
   days.forEach((day, i) => {
-    header += `<th>${day}<br>${weekDates[i]}</th>`;
+    html += `<th>${day}<br>${weekDates[i]}</th>`;
   });
-  header += "</tr>";
+  html += "</tr><tr>";
 
-  // Data row
-  let row = "<tr>";
   letters.forEach(letter => {
-    const activity = childDict[letter.toUpperCase()] || "—";
-    row += `<td>${activity}</td>`;
+    html += `<td>${dict[letter] || "—"}</td>`;
   });
-  row += "</tr>";
 
-  table.innerHTML = header + row;
+  html += "</tr>";
+  table.innerHTML = html;
 }
 
-// -----------------------------
-// Live Update
-// -----------------------------
-function updateTables() {
-  const noahLetters = document.getElementById("noahInput").value.split("");
-  const delilahLetters = document.getElementById("delilahInput").value.split("");
+// --------------------------------------------------
+// 5. Initialize on Page Load
+// --------------------------------------------------
+const letters = weeklyLetters.toUpperCase().split("");
 
-  if (noahLetters.length === 5) {
-    buildTable(noahDict, noahLetters, "noahTable");
-  }
-
-  if (delilahLetters.length === 5) {
-    buildTable(delilahDict, delilahLetters, "delilahTable");
-  }
-}
-
-document.getElementById("noahInput").addEventListener("input", updateTables);
-document.getElementById("delilahInput").addEventListener("input", updateTables);
+buildTable(noahDict, letters, "noahTable");
+buildTable(delilahDict, letters, "delilahTable");
 
 </script>
 
