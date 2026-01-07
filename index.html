@@ -5,7 +5,14 @@
   <style>
     body { font-family: Arial; padding: 20px; }
     table { border-collapse: collapse; margin-bottom: 30px; }
-    td, th { border: 1px solid #333; padding: 8px 12px; }
+    td, th { border: 1px solid #333; padding: 10px 14px; text-align: center; }
+
+    /* Color coding */
+    .Library { background-color: #c8f7c5; }   /* light green */
+    .Gym     { background-color: #c5d9f7; }   /* light blue */
+    .Music   { background-color: #e5c5f7; }   /* light purple */
+    .Stem    { background-color: #f7d9c5; }   /* light orange */
+    .Off     { background-color: #e0e0e0; }   /* gray */
   </style>
 </head>
 <body>
@@ -20,7 +27,7 @@
 // --------------------------------------------------
 // 1. HARD-CODED WEEKLY LETTERS (edit this each week)
 // --------------------------------------------------
-const weeklyLetters = "CDEFA";   // <--- CHANGE THIS ONLY
+const weeklyLetters = "ABCDE";   // <--- CHANGE THIS ONLY
 
 // --------------------------------------------------
 // 2. Dictionaries
@@ -38,8 +45,8 @@ const noahDict = {
 const delilahDict = {
   A: "Library",
   B: "Gym",
-  C: "Music",
-  D: "Library",
+  C: "Stem",
+  D: "Music",
   E: "Gym",
   F: "Stem",
   G: "Off"
@@ -62,7 +69,7 @@ function getWeekDates() {
 }
 
 // --------------------------------------------------
-// 4. Build Table
+// 4. Build Table with Color Coding
 // --------------------------------------------------
 function buildTable(dict, letters, tableId) {
   const table = document.getElementById(tableId);
@@ -75,7 +82,9 @@ function buildTable(dict, letters, tableId) {
   html += "</tr><tr>";
 
   letters.forEach(letter => {
-    html += `<td>${dict[letter] || "—"}</td>`;
+    const activity = dict[letter] || "—";
+    const cssClass = activity.replace(/\s+/g, ""); // remove spaces for class names
+    html += `<td class="${cssClass}">${activity}</td>`;
   });
 
   html += "</tr>";
