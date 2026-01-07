@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Kids Two-Week Schedule</title>
+  <title>Kids Three-Week Schedule</title>
   <style>
     body { font-family: Arial; padding: 20px; }
     table { border-collapse: collapse; margin-bottom: 40px; }
@@ -17,17 +17,22 @@
 </head>
 <body>
 
-<h2>Noah – Two Week Schedule</h2>
+<h2>Noah – Three Week Schedule</h2>
 <table id="noahTable"></table>
 
-<h2>Delilah – Two Week Schedule</h2>
+<h2>Delilah – Three Week Schedule</h2>
 <table id="delilahTable"></table>
 
 <script>
 // --------------------------------------------------
-// 1. HARD-CODED 10 LETTERS (2 weeks)
+// 1. THREE WEEKS OF LETTERS (5 letters each)
 // --------------------------------------------------
-const weeklyLetters = "ABCDEFFEDC";  // <-- MUST be 10 letters
+const week1 = "ABCDE";   // Week 1
+const week2 = "FFEDC";   // Week 2
+const week3 = "ABCDF";   // Week 3
+
+// Combine into one 15-letter array
+const weeklyLetters = (week1 + week2 + week3).toUpperCase().split("");
 
 // --------------------------------------------------
 // 2. Dictionaries
@@ -57,17 +62,17 @@ const delilahDict = {
 // --------------------------------------------------
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
-function getTwoWeekDates() {
+function getThreeWeekDates() {
   const today = new Date();
-  const dayOfWeek = today.getDay();
+  const dow = today.getDay();
 
-  // Force Monday start even if today is weekend
+  // Force Monday start even if weekend
   const monday = new Date(today);
-  const offset = (dayOfWeek === 0 ? -6 : 1 - dayOfWeek);
+  const offset = (dow === 0 ? -6 : 1 - dow);
   monday.setDate(today.getDate() + offset);
 
   const dates = [];
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 15; i++) {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
     dates.push(`${d.getMonth() + 1}/${d.getDate()}`);
@@ -76,17 +81,17 @@ function getTwoWeekDates() {
 }
 
 // --------------------------------------------------
-// 4. Build Two-Week Table
+// 4. Build Three-Week Table
 // --------------------------------------------------
-function buildTwoWeekTable(dict, letters, tableId) {
+function buildThreeWeekTable(dict, letters, tableId) {
   const table = document.getElementById(tableId);
 
-  if (letters.length !== 10) {
-    table.innerHTML = `<tr><td>ERROR: weeklyLetters must be exactly 10 letters. You entered ${letters.length}.</td></tr>`;
+  if (letters.length !== 15) {
+    table.innerHTML = `<tr><td>ERROR: Need exactly 15 letters (3 weeks × 5 days). You entered ${letters.length}.</td></tr>`;
     return;
   }
 
-  const dates = getTwoWeekDates();
+  const dates = getThreeWeekDates();
 
   let html = "<tr>";
 
@@ -98,6 +103,11 @@ function buildTwoWeekTable(dict, letters, tableId) {
   // Week 2 headers
   days.forEach((day, i) => {
     html += `<th>Week 2<br>${day}<br>${dates[i + 5]}</th>`;
+  });
+
+  // Week 3 headers
+  days.forEach((day, i) => {
+    html += `<th>Week 3<br>${day}<br>${dates[i + 10]}</th>`;
   });
 
   html += "</tr><tr>";
@@ -114,6 +124,12 @@ function buildTwoWeekTable(dict, letters, tableId) {
     html += `<td class="${activity}">${activity}</td>`;
   });
 
+  // Week 3 activities
+  letters.slice(10, 15).forEach(letter => {
+    const activity = dict[letter] || "—";
+    html += `<td class="${activity}">${activity}</td>`;
+  });
+
   html += "</tr>";
   table.innerHTML = html;
 }
@@ -121,10 +137,8 @@ function buildTwoWeekTable(dict, letters, tableId) {
 // --------------------------------------------------
 // 5. Initialize on Page Load
 // --------------------------------------------------
-const letters = weeklyLetters.toUpperCase().split("");
-
-buildTwoWeekTable(noahDict, letters, "noahTable");
-buildTwoWeekTable(delilahDict, letters, "delilahTable");
+buildThreeWeekTable(noahDict, weeklyLetters, "noahTable");
+buildThreeWeekTable(delilahDict, weeklyLetters, "delilahTable");
 
 </script>
 
