@@ -13,6 +13,17 @@
     .Music   { background-color: #e5c5f7; }
     .Stem    { background-color: #f7d9c5; }
     .Off     { background-color: #e0e0e0; }
+
+    /* Highlight today */
+    .today {
+      outline: 4px solid #ff9800;
+      font-weight: bold;
+    }
+
+    /* Hide past days */
+    .past {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -74,17 +85,21 @@ function getThreeWeekDates() {
   for (let i = 0; i < 15; i++) {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
-    dates.push(`${d.getMonth() + 1}/${d.getDate()}`);
+    dates.push({
+      label: `${d.getMonth() + 1}/${d.getDate()}`,
+      dateObj: d
+    });
   }
   return dates;
 }
 
 // --------------------------------------------------
-// 4. Build Table (Weeks as Rows, Days as Columns)
+// 4. Build Three-Week Table (Weeks as Rows)
 // --------------------------------------------------
 function buildThreeWeekTable(dict, weekBlocks, tableId) {
   const table = document.getElementById(tableId);
   const dates = getThreeWeekDates();
+  const today = new Date();
 
   let html = "<tr><th></th>";
 
@@ -103,7 +118,18 @@ function buildThreeWeekTable(dict, weekBlocks, tableId) {
     for (let i = 0; i < 5; i++) {
       const letter = letters[i];
       const activity = dict[letter] || "—";
-      html += `<td class="${activity}">${activity}<br>${dates[w * 5 + i]}</td>`;
+      const dateInfo = dates[w * 5 + i];
+
+      // Determine if this day is past or today
+      const isToday =
+        dateInfo.dateObj.toDateString() === today.toDateString();
+      const isPast = dateInfo.dateObj < today && !isToday;
+
+      let classes = activity;
+      if (isToday) classes += " today";
+      if (isPast) classes += " past";
+
+      html += `<td class="${classes}">${activity}<br>${dateInfo.label}</td>`;
     }
 
     html += "</tr>";
