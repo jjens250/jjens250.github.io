@@ -1,33 +1,33 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Kids Weekly Schedule</title>
+  <title>Kids Two-Week Schedule</title>
   <style>
     body { font-family: Arial; padding: 20px; }
-    table { border-collapse: collapse; margin-bottom: 30px; }
+    table { border-collapse: collapse; margin-bottom: 40px; }
     td, th { border: 1px solid #333; padding: 10px 14px; text-align: center; }
 
     /* Color coding */
-    .Library { background-color: #c8f7c5; }   /* light green */
-    .Gym     { background-color: #c5d9f7; }   /* light blue */
-    .Music   { background-color: #e5c5f7; }   /* light purple */
-    .Stem    { background-color: #f7d9c5; }   /* light orange */
-    .Off     { background-color: #e0e0e0; }   /* gray */
+    .Library { background-color: #c8f7c5; }
+    .Gym     { background-color: #c5d9f7; }
+    .Music   { background-color: #e5c5f7; }
+    .Stem    { background-color: #f7d9c5; }
+    .Off     { background-color: #e0e0e0; }
   </style>
 </head>
 <body>
 
-<h2>Noah's Days</h2>
+<h2>Noah – Two Week Schedule</h2>
 <table id="noahTable"></table>
 
-<h2>Delilah's Days</h2>
+<h2>Delilah – Two Week Schedule</h2>
 <table id="delilahTable"></table>
 
 <script>
 // --------------------------------------------------
-// 1. HARD-CODED WEEKLY LETTERS (edit this each week)
+// 1. HARD-CODED 10 LETTERS (2 weeks)
 // --------------------------------------------------
-const weeklyLetters = "ABCDE";   // <--- CHANGE THIS ONLY
+const weeklyLetters = "CDEFABCDEF";  // <--- CHANGE THIS ONLY
 
 // --------------------------------------------------
 // 2. Dictionaries
@@ -53,53 +53,42 @@ const delilahDict = {
 };
 
 // --------------------------------------------------
-// 3. Days + Dates
+// 3. Days + Dates (always start on Monday)
 // --------------------------------------------------
-const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
-function getWeekDates() {
+function getTwoWeekDates() {
   const today = new Date();
   const monday = new Date(today.setDate(today.getDate() - today.getDay() + 1));
 
-  return days.map((_, i) => {
+  const dates = [];
+
+  for (let i = 0; i < 10; i++) {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
-    return `${d.getMonth() + 1}/${d.getDate()}`;
-  });
+    dates.push(`${d.getMonth() + 1}/${d.getDate()}`);
+  }
+
+  return dates;
 }
 
 // --------------------------------------------------
-// 4. Build Table with Color Coding
+// 4. Build Two-Week Table
 // --------------------------------------------------
-function buildTable(dict, letters, tableId) {
+function buildTwoWeekTable(dict, letters, tableId) {
   const table = document.getElementById(tableId);
-  const weekDates = getWeekDates();
+  const dates = getTwoWeekDates();
 
   let html = "<tr>";
+
+  // Week 1 headers
   days.forEach((day, i) => {
-    html += `<th>${day}<br>${weekDates[i]}</th>`;
-  });
-  html += "</tr><tr>";
-
-  letters.forEach(letter => {
-    const activity = dict[letter] || "—";
-    const cssClass = activity.replace(/\s+/g, ""); // remove spaces for class names
-    html += `<td class="${cssClass}">${activity}</td>`;
+    html += `<th>Week 1<br>${day}<br>${dates[i]}</th>`;
   });
 
-  html += "</tr>";
-  table.innerHTML = html;
-}
+  // Week 2 headers
+  days.forEach((day, i) => {
+    html += `<th>Week 2<br>${day}<br>${dates[i + 5]}</th>`;
+  });
 
-// --------------------------------------------------
-// 5. Initialize on Page Load
-// --------------------------------------------------
-const letters = weeklyLetters.toUpperCase().split("");
-
-buildTable(noahDict, letters, "noahTable");
-buildTable(delilahDict, letters, "delilahTable");
-
-</script>
-
-</body>
-</html>
+  html +=
