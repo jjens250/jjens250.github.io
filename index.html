@@ -27,12 +27,11 @@
 // --------------------------------------------------
 // 1. THREE WEEKS OF LETTERS (5 letters each)
 // --------------------------------------------------
-const week1 = "ABCDE";   // Week 1
-const week2 = "FFEDC";   // Week 2
-const week3 = "ABCDF";   // Week 3
+const week1 = "ABCDE";
+const week2 = "FFEDC";
+const week3 = "ABCDF";
 
-// Combine into one 15-letter array
-const weeklyLetters = (week1 + week2 + week3).toUpperCase().split("");
+const weeklyLetters = [week1, week2, week3];
 
 // --------------------------------------------------
 // 2. Dictionaries
@@ -60,7 +59,7 @@ const delilahDict = {
 // --------------------------------------------------
 // 3. Days + Dates (always start on Monday)
 // --------------------------------------------------
-const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
 function getThreeWeekDates() {
   const today = new Date();
@@ -81,56 +80,35 @@ function getThreeWeekDates() {
 }
 
 // --------------------------------------------------
-// 4. Build Three-Week Table
+// 4. Build Table (Weeks as Rows, Days as Columns)
 // --------------------------------------------------
-function buildThreeWeekTable(dict, letters, tableId) {
+function buildThreeWeekTable(dict, weekBlocks, tableId) {
   const table = document.getElementById(tableId);
-
-  if (letters.length !== 15) {
-    table.innerHTML = `<tr><td>ERROR: Need exactly 15 letters (3 weeks × 5 days). You entered ${letters.length}.</td></tr>`;
-    return;
-  }
-
   const dates = getThreeWeekDates();
 
-  let html = "<tr>";
+  let html = "<tr><th></th>";
 
-  // Week 1 headers
-  days.forEach((day, i) => {
-    html += `<th>Week 1<br>${day}<br>${dates[i]}</th>`;
+  // Header row: Mon–Fri
+  days.forEach(day => {
+    html += `<th>${day}</th>`;
   });
-
-  // Week 2 headers
-  days.forEach((day, i) => {
-    html += `<th>Week 2<br>${day}<br>${dates[i + 5]}</th>`;
-  });
-
-  // Week 3 headers
-  days.forEach((day, i) => {
-    html += `<th>Week 3<br>${day}<br>${dates[i + 10]}</th>`;
-  });
-
-  html += "</tr><tr>";
-
-  // Week 1 activities
-  letters.slice(0, 5).forEach(letter => {
-    const activity = dict[letter] || "—";
-    html += `<td class="${activity}">${activity}</td>`;
-  });
-
-  // Week 2 activities
-  letters.slice(5, 10).forEach(letter => {
-    const activity = dict[letter] || "—";
-    html += `<td class="${activity}">${activity}</td>`;
-  });
-
-  // Week 3 activities
-  letters.slice(10, 15).forEach(letter => {
-    const activity = dict[letter] || "—";
-    html += `<td class="${activity}">${activity}</td>`;
-  });
-
   html += "</tr>";
+
+  // Build each week row
+  for (let w = 0; w < 3; w++) {
+    const letters = weekBlocks[w].toUpperCase().split("");
+
+    html += `<tr><th>Week ${w + 1}</th>`;
+
+    for (let i = 0; i < 5; i++) {
+      const letter = letters[i];
+      const activity = dict[letter] || "—";
+      html += `<td class="${activity}">${activity}<br>${dates[w * 5 + i]}</td>`;
+    }
+
+    html += "</tr>";
+  }
+
   table.innerHTML = html;
 }
 
