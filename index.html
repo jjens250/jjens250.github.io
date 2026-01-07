@@ -27,7 +27,7 @@
 // --------------------------------------------------
 // 1. HARD-CODED 10 LETTERS (2 weeks)
 // --------------------------------------------------
-const weeklyLetters = "CDEFABCDEF";  // <--- CHANGE THIS ONLY
+const weeklyLetters = "ABCDEFFEDC";  // <-- MUST be 10 letters
 
 // --------------------------------------------------
 // 2. Dictionaries
@@ -59,16 +59,19 @@ const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
 function getTwoWeekDates() {
   const today = new Date();
-  const monday = new Date(today.setDate(today.getDate() - today.getDay() + 1));
+  const dayOfWeek = today.getDay();
+
+  // Force Monday start even if today is weekend
+  const monday = new Date(today);
+  const offset = (dayOfWeek === 0 ? -6 : 1 - dayOfWeek);
+  monday.setDate(today.getDate() + offset);
 
   const dates = [];
-
   for (let i = 0; i < 10; i++) {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
     dates.push(`${d.getMonth() + 1}/${d.getDate()}`);
   }
-
   return dates;
 }
 
@@ -77,6 +80,12 @@ function getTwoWeekDates() {
 // --------------------------------------------------
 function buildTwoWeekTable(dict, letters, tableId) {
   const table = document.getElementById(tableId);
+
+  if (letters.length !== 10) {
+    table.innerHTML = `<tr><td>ERROR: weeklyLetters must be exactly 10 letters. You entered ${letters.length}.</td></tr>`;
+    return;
+  }
+
   const dates = getTwoWeekDates();
 
   let html = "<tr>";
@@ -91,4 +100,33 @@ function buildTwoWeekTable(dict, letters, tableId) {
     html += `<th>Week 2<br>${day}<br>${dates[i + 5]}</th>`;
   });
 
-  html +=
+  html += "</tr><tr>";
+
+  // Week 1 activities
+  letters.slice(0, 5).forEach(letter => {
+    const activity = dict[letter] || "—";
+    html += `<td class="${activity}">${activity}</td>`;
+  });
+
+  // Week 2 activities
+  letters.slice(5, 10).forEach(letter => {
+    const activity = dict[letter] || "—";
+    html += `<td class="${activity}">${activity}</td>`;
+  });
+
+  html += "</tr>";
+  table.innerHTML = html;
+}
+
+// --------------------------------------------------
+// 5. Initialize on Page Load
+// --------------------------------------------------
+const letters = weeklyLetters.toUpperCase().split("");
+
+buildTwoWeekTable(noahDict, letters, "noahTable");
+buildTwoWeekTable(delilahDict, letters, "delilahTable");
+
+</script>
+
+</body>
+</html>
