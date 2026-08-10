@@ -83,12 +83,17 @@
 // 1a. Starting letter per month (first Monday's letter for that month)
 // Key format: "YYYY-MM"
 const startingLetters = {
-  "2026-01": "C",
-  "2026-02": "D",
-  "2026-03": "D",
-  "2026-04": "D",
-  "2026-05": "F",
-  "2026-06": "A"
+  "2026-08": "C",
+  "2026-09": "E",
+  "2026-10": "A",
+  "2026-11": "C",
+  "2026-12": "F",
+  "2027-01": "D",
+  "2027-02": "E",
+  "2027-03": "E",
+  "2027-04": "F",
+  "2027-05": "F",
+  "2027-06": "C"
   // Add more months/years as needed
 };
 
@@ -139,7 +144,19 @@ const letterOverrides = {
 const cycle = ["A", "B", "C", "D", "E", "F"];
 
 // 1e. Activity dictionaries
-const activityDict = {
+const activityDictNoah = {
+  A: "Gym",
+  B: "Music",
+  C: "Media",
+  D: "Gym",
+  E: "Art",
+  F: "Library",
+  // G kept only if ever needed; not used in cycle
+  G: "Off"
+};
+
+  // 1e. Activity dictionaries
+const activityDictDelilah = {
   A: "Library",
   B: "Gym",
   C: "Music",
@@ -151,8 +168,8 @@ const activityDict = {
 };
 
 // Separate dictionaries for each kid if you ever diverge them later:
-const noahDict = activityDict;
-const delilahDict = activityDict;
+const noahDict = activityDictNoah;
+const delilahDict = activityDictDelilah;
 
 // --------------------------------------------------
 // 2. DATE HELPERS
