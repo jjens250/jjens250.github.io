@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Kids Monthly School Schedule Update</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    h1 { margin-bottom: 5px; }
+    h2 { margin-top: 30px; }
+
+    table {
+      border-collapse: collapse;
+      margin-bottom: 30px;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    th, td {
+      border: 1px solid #333;
+      padding: 8px 10px;
+      text-align: center;
+      vertical-align: top;
+      min-width: 80px;
+    }
+
+    th {
+      background-color: #f0f0f0;
+    }
+
+    /* Color coding based on activity name */
+    .Library { background-color: #c8f7c5; }  /* light green */
+    .Gym     { background-color: #c5d9f7; }  /* light blue */
+    .Music   { background-color: #e5c5f7; }  /* light purple */
+    .Media   { background-color: #f7f3c5; }  /* light yellow */
+    .Art     { background-color: #f7d9c5; }  /* light orange */
+    .Off     { background-color: #e0e0e0; }  /* gray */
+
+    /* Highlight today */
+    .today {
+      outline: 3px solid #ff9800;
+      font-weight: bold;
+    }
+
+    /* Hide past days but keep grid alignment */
+    .past {
+      visibility: hidden;  /* hides content but keeps the cell's space */
+      border: none;
+      background: none;
+    }
+
+    .date-label {
+      font-weight: bold;
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    .activity-label {
+      font-size: 0.9em;
+    }
+
+    .month-header {
+      font-size: 1.2em;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+
+<h1 id="monthTitle"></h1>
+<div class="month-header" id="monthSubtitle"></div>
+
+<h2>Noah – Monthly Schedule</h2>
+<table id="noahTable"></table>
+
+<h2>Delilah – Monthly Schedule</h2>
+<table id="delilahTable"></table>
+
+<script>
+// --------------------------------------------------
+// 1. CONFIGURATION
+// --------------------------------------------------
+
+// 1a. Starting letter per month (first Monday's letter for that month)
+// Key format: "YYYY-MM"
+const startingLetters = {
+  "2026-08": "B",
+  "2026-09": "E",
+  "2026-10": "A",
+  "2026-11": "C",
+  "2026-12": "F",
+  "2027-01": "D",
+  "2027-02": "E",
+  "2027-03": "E",
+  "2027-04": "F",
+  "2027-05": "F",
+  "2027-06": "C"
+  // Add more months/years as needed
+};
+
+// 1b. Days OFF (no school) - do NOT advance the cycle on these days
+// Key format: "YYYY-MM-DD"
+const offOverrides = {
+  "2026-09-04": "Off",
+  "2026-09-07": "Off",
+  "2026-10-12": "Off",
+  "2026-11-03": "Off",
+  "2026-11-12": "Off",
+  "2026-11-13": "Off",
+  "2026-11-25": "Off",
+  "2026-11-26": "Off",
+  "2026-11-27": "Off",
+  "2026-11-30": "Off",
+  "2026-12-23": "Off",
+  "2026-12-24": "Off",
+  "2026-12-25": "Off",
+  "2026-12-28": "Off",
+  "2026-12-29": "Off",
+  "2026-12-30": "Off",
+  "2026-12-31": "Off",
+  "2027-01-01": "Off",
+  "2027-01-18": "Off",
+  "2027-02-12": "Off",
+  "2027-02-15": "Off",
+  "2027-03-25": "Off",
+  "2027-03-26": "Off",
+  "2027-03-29": "Off",
+  "2027-03-30": "Off",
+  "2027-04-16": "Off",
+
+  
+  // Add more off days as needed
+};
+
+// 1c. Letter overrides - force a specific letter on these days
+// These use the given letter but do NOT advance the cycle
+const letterOverrides = {
+  //"2026-01-15": "F",
+  //"2026-01-22": "B",
+  //"2026-02-10": "D"
+  // Add more letter overrides as needed
+};
+
+// 1d. Letter cycle (A–F)
+const cycle = ["A", "B", "C", "D", "E", "F"];
+
+// 1e. Activity dictionaries
+const activityDictNoah = {
+  A: "Gym",
+  B: "Music",
+  C: "Media",
+  D: "Gym",
+  E: "Art",
+  F: "Library",
+  // G kept only if ever needed; not used in cycle
+  G: "Off"
+};
+
+  // 1e. Activity dictionaries
+const activityDictDelilah = {
+  A: "Library",
+  B: "Gym",
+  C: "Music",
+  D: "Media",
+  E: "Gym",
+  F: "Art",
+  // G kept only if ever needed; not used in cycle
+  G: "Off"
+};
+
+// Separate dictionaries for each kid if you ever diverge them later:
+const noahDict = activityDictNoah;
+const delilahDict = activityDictDelilah;
+
+// --------------------------------------------------
+// 2. DATE HELPERS
+// --------------------------------------------------
+
+function pad(num) {
+  return num.toString().padStart(2, "0");
+}
+
+// "2026-01-05"
+function formatDateKey(year, month, day) {
+  return `${year}-${pad(month)}-${pad(day)}`;
+}
+
+const monthNames = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
+
+// --------------------------------------------------
+// 3. GENERATE MONTH DATA (letters, off days, etc.)
+// --------------------------------------------------
+
+/**
+ * Generate data for a specific month.
+ * targetYear: full year (e.g., 2026)
+ * targetMonth: 1–12
+ * today: Date object representing "today" (for isToday/isPast flags)
+ */
+function generateMonthData(targetYear, targetMonth, today) {
+  const year = targetYear;
+  const month = targetMonth;
+
+  const monthKey = `${year}-${pad(month)}`;
+  const startingLetter = startingLetters[monthKey] || "A";
+
+  const firstOfMonth = new Date(year, month - 1, 1);
+  const daysInMonth = new Date(year, month, 0).getDate();
+
+  // Find the first Monday in this month
+  let firstMondayDay = null;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateObj = new Date(year, month - 1, d);
+    const jsDay = dateObj.getDay(); // 0–6, 1 = Monday
+    if (jsDay === 1) {
+      firstMondayDay = d;
+      break;
+    }
+  }
+
+  // If somehow no Monday (very unlikely), just start at the 1st
+  if (firstMondayDay === null) {
+    firstMondayDay = 1;
+  }
+
+  // Index of startingLetter in cycle A–F
+  let cycleIndex = cycle.indexOf(startingLetter);
+  if (cycleIndex === -1) cycleIndex = 0; // fallback
+
+  const todayYear = today.getFullYear();
+  const todayMonth = today.getMonth() + 1;
+  const todayDay = today.getDate();
+
+  const todayKey = formatDateKey(todayYear, todayMonth, todayDay);
+  const daysData = []; // holds data for every day (even weekends)
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateObj = new Date(year, month - 1, d);
+    const jsDay = dateObj.getDay(); // 0–6 (0=Sun, 1=Mon,...)
+    const isWeekend = (jsDay === 0 || jsDay === 6);
+
+    const dateKey = formatDateKey(year, month, d);
+
+    const sameMonth = (year === todayYear && month === todayMonth);
+    const isToday = (dateKey === todayKey);
+    const isPast = sameMonth && (dateObj < today);
+
+    let letter = null;
+    let isOff = false;
+
+    if (!isWeekend) {
+      // Only assign letters on weekdays
+
+      if (d < firstMondayDay) {
+        // Before the first Monday: no letter
+        letter = null;
+      } else if (offOverrides[dateKey]) {
+        // OFF day
+        letter = null; // no letter for off days
+        isOff = true;
+        // Do NOT advance cycle
+      } else if (letterOverrides[dateKey]) {
+        // Forced letter day
+        letter = letterOverrides[dateKey];
+        // Do NOT advance cycle
+      } else {
+        // Normal cycle day
+        letter = cycle[cycleIndex];
+        cycleIndex = (cycleIndex + 1) % cycle.length; // advance cycle
+      }
+    }
+
+    daysData.push({
+      year,
+      month,
+      day: d,
+      dateObj,
+      dateKey,
+      isWeekend,
+      isToday,
+      isPast,
+      isOff,
+      letter
+    });
+  }
+
+  return {
+    year,
+    month,
+    daysInMonth,
+    firstOfMonth,
+    daysData
+  };
+}
+
+// --------------------------------------------------
+// 4. BUILD CALENDAR GRID (Mon–Fri only, two separate tables)
+// --------------------------------------------------
+
+/**
+ * Build a monthly table:
+ * - Uses monthInfo for the current month
+ * - Adds a final preview row from nextMonthInfo (first 3 school days)
+ * - Removes rows where ALL non-null cells are past (and not today)
+ */
+function buildMonthlyTable(dict, tableId, monthInfo, nextMonthInfo) {
+  const table = document.getElementById(tableId);
+  const { year, month, daysInMonth, firstOfMonth, daysData } = monthInfo;
+
+  // Create a 6x5 grid (max 6 weeks, 5 weekdays)
+  const rows = 6;
+  const cols = 5; // Mon–Fri
+  const grid = Array.from({ length: rows }, () => Array(cols).fill(null));
+
+  // Place days into the grid
+  for (let d = 1; d <= daysInMonth; d++) {
+    const data = daysData[d - 1];
+    const dateObj = data.dateObj;
+    const jsDay = dateObj.getDay(); // 0–6
+    // Convert JS day (0=Sun) to Monday-first index (0=Mon,...,6=Sun)
+    const weekdayNormalized = (jsDay + 6) % 7; // 0=Mon,1=Tue,...,5=Sat,6=Sun
+
+    // Only place weekdays (Mon–Fri => 0–4)
+    if (weekdayNormalized <= 4) {
+      const firstJsDay = firstOfMonth.getDay(); // 0–6
+      const firstNorm = (firstJsDay + 6) % 7;   // 0=Mon,...
+
+      const row = Math.floor((d - 1 + firstNorm) / 7);
+      const col = weekdayNormalized;
+
+      if (row >= 0 && row < rows) {
+        grid[row][col] = data;
+      }
+    }
+  }
+
+  // Build HTML
+  let html = "<tr>";
+  const dayHeaders = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+  dayHeaders.forEach(day => {
+    html += `<th>${day}</th>`;
+  });
+  html += "</tr>";
+
+  // Render rows for the current month, skipping fully past rows
+  for (let r = 0; r < rows; r++) {
+    const rowCells = grid[r];
+
+    // Determine if this row is fully past (for non-null cells)
+    let hasNonNull = false;
+    let allPast = true;
+
+    for (let c = 0; c < cols; c++) {
+      const cellData = rowCells[c];
+      if (cellData) {
+        hasNonNull = true;
+        const { isPast, isToday } = cellData;
+        if (!(isPast && !isToday)) {
+          allPast = false;
+        }
+      }
+    }
+
+    // If the row has at least one real day and all are past (and not today) -> skip entire row
+    if (hasNonNull && allPast) {
+      continue;
+    }
+
+    // Otherwise render the row
+    html += "<tr>";
+    for (let c = 0; c < cols; c++) {
+      const cellData = rowCells[c];
+      if (!cellData) {
+        html += "<td></td>";
+      } else {
+        const { day, dateKey, isToday, isPast, isOff, letter } = cellData;
+
+        let activity = null;
+        let cssClass = "";
+        if (isOff) {
+          activity = "Off";
+          cssClass = "Off";
+        } else if (letter && dict[letter]) {
+          activity = dict[letter];
+          cssClass = dict[letter]; // class name matches activity string
+        }
+
+        // Build classes for this cell
+        let classes = [];
+        if (cssClass) classes.push(cssClass);
+        if (isToday) classes.push("today");
+        if (isPast && !isToday) classes.push("past");
+
+        const classAttr = classes.length ? ` class="${classes.join(" ")}"` : "";
+
+        // Display date as M/D
+        const displayDate = `${month}/${day}`;
+
+        let innerHtml = `<span class="date-label">${displayDate}</span>`;
+        if (letter) {
+          innerHtml += `<div class="activity-label">${letter} – ${activity || ""}</div>`;
+        } else if (isOff) {
+          innerHtml += `<div class="activity-label">Off</div>`;
+        } else {
+          innerHtml += `<div class="activity-label"></div>`;
+        }
+
+        html += `<td${classAttr}>${innerHtml}</td>`;
+      }
+    }
+    html += "</tr>";
+  }
+
+  // --------------------------------------------------
+  // Add final preview row: first 3 school days of next month
+  // --------------------------------------------------
+  const previewCells = [null, null, null, null, null]; // Mon–Fri
+
+  if (nextMonthInfo) {
+    const nextDays = nextMonthInfo.daysData;
+
+    let count = 0;
+    for (let i = 0; i < nextDays.length && count < 3; i++) {
+      const data = nextDays[i];
+      const { dateObj, isWeekend, isOff, letter } = data;
+      if (isWeekend) continue;
+      if (isOff) continue;
+      if (!letter) continue; // skip days without letters
+
+      const jsDay = dateObj.getDay();
+      const weekdayNormalized = (jsDay + 6) % 7; // 0=Mon,...,6=Sun
+      if (weekdayNormalized > 4) continue; // skip Sat/Sun just in case
+
+      // Only fill if that weekday slot is empty (one cell per weekday)
+      if (!previewCells[weekdayNormalized]) {
+        previewCells[weekdayNormalized] = data;
+        count++;
+      }
+    }
+
+    // Always show this row (as long as we have at least one preview day)
+    if (previewCells.some(cell => cell !== null)) {
+      html += "<tr>";
+      for (let c = 0; c < cols; c++) {
+        const cellData = previewCells[c];
+        if (!cellData) {
+          html += "<td></td>";
+        } else {
+          const { day, month: nextMonth, isOff, letter } = cellData;
+
+          let activity = null;
+          let cssClass = "";
+          if (isOff) {
+            activity = "Off";
+            cssClass = "Off";
+          } else if (letter && dict[letter]) {
+            activity = dict[letter];
+            cssClass = dict[letter];
+          }
+
+          let classes = [];
+          if (cssClass) classes.push(cssClass);
+          // Preview row is always future relative to the displayed month, so no 'past' or 'today'
+          const classAttr = classes.length ? ` class="${classes.join(" ")}"` : "";
+
+          const displayDate = `${nextMonth}/${day}`;
+
+          let innerHtml = `<span class="date-label">${displayDate}</span>`;
+          if (letter) {
+            innerHtml += `<div class="activity-label">${letter} – ${activity || ""}</div>`;
+          } else if (isOff) {
+            innerHtml += `<div class="activity-label">Off</div>`;
+          } else {
+            innerHtml += `<div class="activity-label"></div>`;
+          }
+
+          html += `<td${classAttr}>${innerHtml}</td>`;
+        }
+      }
+      html += "</tr>";
+    }
+  }
+
+  table.innerHTML = html;
+}
+
+// --------------------------------------------------
+// 5. INITIALIZE PAGE
+// --------------------------------------------------
+
+(function init() {
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth() + 1; // 1–12
+
+  // Current month info
+  const monthInfo = generateMonthData(currentYear, currentMonth, today);
+
+  // Next month (for preview)
+  let nextYear = currentYear;
+  let nextMonth = currentMonth + 1;
+  if (nextMonth === 13) {
+    nextMonth = 1;
+    nextYear = currentYear + 1;
+  }
+  const nextMonthInfo = generateMonthData(nextYear, nextMonth, today);
+
+  // Set page header
+  const titleEl = document.getElementById("monthTitle");
+  const subtitleEl = document.getElementById("monthSubtitle");
+  titleEl.textContent = `${monthNames[currentMonth - 1]} ${currentYear}`;
+  subtitleEl.textContent = "Looping A–F cycle • Weekdays only • Off & letter overrides • Preview of next month";
+
+  // Build both calendars
+  buildMonthlyTable(noahDict, "noahTable", monthInfo, nextMonthInfo);
+  buildMonthlyTable(delilahDict, "delilahTable", monthInfo, nextMonthInfo);
+})();
+</script>
+
+</body>
+</html>
