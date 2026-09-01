@@ -487,6 +487,59 @@ function buildMonthlyTable(dict, tableId, monthInfo, nextMonthInfo) {
   table.innerHTML = html;
 }
 
+  /////////////////////////////////////////
+  //This is where I write a file for email
+  ////////////////////////////////////////
+  function generateCSV(monthInfo, nextMonthInfo) {
+  let rows = [];
+  
+  function addDay(data, kidName, dict) {
+    if (!data) return;
+    const { dateKey, letter, isOff } = data;
+    let activity = "";
+    if (isOff) activity = "Off";
+    else if (letter && dict[letter]) activity = dict[letter];
+    rows.push(`${dateKey},${letter || ""},${activity},${kidName}`);
+  }
+
+  // Current month
+  monthInfo.daysData.forEach(d => {
+    if (!d.isWeekend) {
+      addDay(d, "Noah", noahDict);
+      addDay(d, "Delilah", delilahDict);
+    }
+  });
+
+  // Preview row (first 3 school days of next month)
+  nextMonthInfo.daysData.forEach(d => {
+    if (!d.isWeekend && d.letter) {
+      addDay(d, "Noah", noahDict);
+      addDay(d, "Delilah", delilahDict);
+    }
+  });
+
+  return rows.join("\n");
+}
+
+
+  async function uploadCSVToOneDrive(csvText) {
+  const blob = new Blob([csvText], { type: "text/csv" });
+
+  await fetch(
+    "https://graph.microsoft.com/v1.0/me/drive/root:/SchoolSchedule/next-week-data.csv:/content",
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "text/csv"
+      },
+      body: blob
+    }
+  );
+}
+
+
+  //////////////////////////////////////
+
 // --------------------------------------------------
 // 5. INITIALIZE PAGE
 // --------------------------------------------------
@@ -517,6 +570,12 @@ function buildMonthlyTable(dict, tableId, monthInfo, nextMonthInfo) {
   // Build both calendars
   buildMonthlyTable(noahDict, "noahTable", monthInfo, nextMonthInfo);
   buildMonthlyTable(delilahDict, "delilahTable", monthInfo, nextMonthInfo);
+
+//This is where I write out for one drive email
+  const csv = generateCSV(monthInfo, nextMonthInfo);
+uploadCSVToOneDrive(csv);
+
+  
 })();
 </script>
 
