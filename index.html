@@ -209,21 +209,22 @@ function generateMonthData(targetYear, targetMonth, today) {
   const firstOfMonth = new Date(year, month - 1, 1);
   const daysInMonth = new Date(year, month, 0).getDate();
 
-  // Find the first Monday in this month
-  let firstMondayDay = null;
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dateObj = new Date(year, month - 1, d);
-    const jsDay = dateObj.getDay(); // 0–6, 1 = Monday
-    if (jsDay === 1) {
-      firstMondayDay = d;
-      break;
-    }
+// Find the first school day (Mon–Fri, not Off)
+let firstSchoolDay = null;
+for (let d = 1; d <= daysInMonth; d++) {
+  const dateObj = new Date(year, month - 1, d);
+  const jsDay = dateObj.getDay();
+  const dateKey = formatDateKey(year, month, d);
+  const isWeekend = (jsDay === 0 || jsDay === 6);
+  if (!isWeekend && !offOverrides[dateKey]) {
+    firstSchoolDay = d;
+    break;
   }
+}
+if (firstSchoolDay === null) {
+  firstSchoolDay = 1;
+}
 
-  // If somehow no Monday (very unlikely), just start at the 1st
-  if (firstMondayDay === null) {
-    firstMondayDay = 1;
-  }
 
   // Index of startingLetter in cycle A–F
   let cycleIndex = cycle.indexOf(startingLetter);
@@ -253,7 +254,7 @@ function generateMonthData(targetYear, targetMonth, today) {
     if (!isWeekend) {
       // Only assign letters on weekdays
 
-      if (d < firstMondayDay) {
+      if (d < firstSchoolDay) {
         // Before the first Monday: no letter
         letter = null;
       } else if (offOverrides[dateKey]) {
