@@ -1,0 +1,30 @@
+name: Daily activity notification
+
+on:
+  schedule:
+    # 7pm Eastern = 23:00 UTC during daylight time, 00:00 UTC during standard time.
+    # Both are listed; notify.js only sends when it's actually 7pm in New York.
+    - cron: "5 23 * * *"
+    - cron: "5 0 * * *"
+  workflow_dispatch: # lets you click "Run workflow" to test it any time
+    inputs:
+      force_send:
+        description: "Send now, even if it isn't 7pm"
+        type: boolean
+        default: true
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Send tomorrow's activities
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          FORCE_SEND: ${{ github.event_name == 'workflow_dispatch' && inputs.force_send && '1' || '' }}
+        run: node notify.js
