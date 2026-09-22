@@ -2,14 +2,17 @@ name: Daily activity notification
 
 on:
   schedule:
-    # 7pm Eastern = 23:00 UTC during daylight time, 00:00 UTC during standard time.
-    # Both are listed; notify.js only sends when it's actually 7pm in New York.
-    - cron: "5 23 * * *"
-    - cron: "5 0 * * *"
+    # GitHub doesn't guarantee the exact minute a schedule fires, and it can
+    # be delayed by a while. So we check every 15 minutes across a window
+    # that covers 5pm-10pm Eastern in both daylight saving and standard time
+    # (21:00 UTC through 03:59 UTC). notify.js only actually sends once it's
+    # evening Eastern time, and the cache step below makes sure it only
+    # sends once per day even though this runs many times.
+    - cron: "*/15 21-23,0-3 * * *"
   workflow_dispatch: # lets you click "Run workflow" to test it any time
     inputs:
       force_send:
-        description: "Send now, even if it isn't 7pm"
+        description: "Send now, even if it isn't evening yet"
         type: boolean
         default: true
 
@@ -23,7 +26,22 @@ jobs:
         with:
           node-version: 20
 
+      - name: Get today's date (Eastern time)
+        id: date
+        run: echo "date=$(TZ='America/New_York' date +%F)" >> "$GITHUB_OUTPUT"
+
+      # Only used for real scheduled runs, so a manual test never uses up
+      # the day's one send.
+      - name: Check whether we already sent today
+        if: github.event_name == 'schedule'
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: .sent-marker
+          key: sent-${{ steps.date.outputs.date }}
+
       - name: Send tomorrow's activities
+        if: github.event_name != 'schedule' || steps.cache.outputs.cache-hit != 'true'
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           FORCE_SEND: ${{ github.event_name == 'workflow_dispatch' && inputs.force_send && '1' || '' }}
