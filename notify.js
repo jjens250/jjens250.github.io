@@ -3,18 +3,26 @@
 // that lives inside index.html (so you only ever edit the schedule in one place),
 // then sends a push notification through ntfy.sh.
 //
+// GitHub's scheduler doesn't fire at the exact minute you ask for - it can be
+// delayed by a while, sometimes hours. So instead of requiring "exactly 7pm",
+// this checks repeatedly through the evening and sends the first time it's
+// somewhere in the WINDOW below. The workflow's own once-per-day cache makes
+// sure that only happens once.
+//
 // Env vars:
 //   NTFY_TOPIC   (required unless DRY_RUN) - your private ntfy topic name
 //   HTML_FILE    (optional) path to the page, default "index.html"
 //   TEST_DATE    (optional) "YYYY-MM-DD" - pretend that's TODAY (for testing)
 //   DRY_RUN      (optional) "1" - print the message instead of sending it
-//   FORCE_SEND   (optional) "1" - skip the "is it 7pm Eastern?" check
+//   FORCE_SEND   (optional) "1" - skip the "is it evening yet?" check
 
 const fs = require("fs");
 const vm = require("vm");
 
 const TZ = "America/New_York";
-const SEND_HOUR = 19; // 7pm Eastern
+const WINDOW_START_HOUR = 17; // 5pm Eastern
+const WINDOW_END_HOUR = 21; // through 9:59pm Eastern
+const MARKER_FILE = ".sent-marker";
 
 // ---------- 1. Load config straight out of index.html ----------
 function loadConfig() {
@@ -152,13 +160,14 @@ async function send(msg) {
   let now = easternNow();
   if (process.env.TEST_DATE) {
     const [y, m, d] = process.env.TEST_DATE.split("-").map(Number);
-    now = { year: y, month: m, day: d, hour: SEND_HOUR };
+    now = { year: y, month: m, day: d, hour: WINDOW_START_HOUR + 2 };
   }
 
-  // GitHub cron runs in UTC and can't follow daylight saving, so the workflow
-  // fires at both 23:00 and 00:00 UTC and we only send when it's 7pm Eastern.
-  if (!process.env.FORCE_SEND && !process.env.TEST_DATE && now.hour !== SEND_HOUR) {
-    console.log(`It's ${now.hour}:00 Eastern, not ${SEND_HOUR}:00. Skipping.`);
+  const inWindow = now.hour >= WINDOW_START_HOUR && now.hour <= WINDOW_END_HOUR;
+  if (!process.env.FORCE_SEND && !process.env.TEST_DATE && !inWindow) {
+    console.log(
+      `It's ${now.hour}:00 Eastern, outside the ${WINDOW_START_HOUR}:00-${WINDOW_END_HOUR}:59 send window. Skipping.`
+    );
     return;
   }
 
@@ -178,6 +187,9 @@ async function send(msg) {
   }
   await send(msg);
   console.log("Sent!");
+  // Marks today as "already sent" so the workflow's cache step won't send
+  // again if it runs a second time later this evening.
+  fs.writeFileSync(MARKER_FILE, `Sent at ${new Date().toISOString()}\n`);
 })().catch((err) => {
   console.error(err);
   process.exit(1);
